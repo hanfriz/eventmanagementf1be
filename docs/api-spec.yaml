@@ -1,0 +1,1272 @@
+openapi: 3.0.3
+info:
+  title: Event Management API
+  description: |
+    Comprehensive API for event management system that allows users to create, manage, and book events.
+
+    ## Features
+    - User authentication and authorization
+    - Event creation and management
+    - Booking and transaction handling
+    - Review and rating system
+    - Promotion and discount codes
+    - File upload capabilities
+
+    ## Authentication
+    This API uses Bearer token authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <your-token>
+    ```
+
+    ## Base URL
+    ```
+    http://localhost:5001/api
+    ```
+  version: 1.0.0
+  contact:
+    name: Event Management Team
+    email: support@eventmanagement.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:5001/api
+    description: Development server
+  - url: https://api.eventmanagement.com
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization endpoints
+  - name: Events
+    description: Event management operations
+  - name: Users
+    description: User profile and account management
+  - name: Transactions
+    description: Booking and payment transactions
+  - name: Reviews
+    description: Event reviews and ratings
+  - name: Promotions
+    description: Discount codes and promotions
+  - name: Upload
+    description: File upload operations
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for API authentication
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique user identifier
+        email:
+          type: string
+          format: email
+          description: User email address
+        fullName:
+          type: string
+          description: User full name
+        role:
+          type: string
+          enum: [CUSTOMER, ORGANIZER, ADMIN]
+          description: User role
+        profilePicture:
+          type: string
+          description: URL to profile picture
+        gender:
+          type: string
+          enum: [MALE, FEMALE]
+          description: User gender
+        birthDate:
+          type: string
+          format: date
+          description: User birth date
+        points:
+          type: integer
+          description: User loyalty points
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+          description: Event title
+        description:
+          type: string
+          description: Event description
+        category:
+          type: string
+          enum:
+            [
+              TECHNOLOGY,
+              BUSINESS,
+              EDUCATION,
+              ENTERTAINMENT,
+              SPORTS,
+              ART,
+              HEALTH,
+              TRAVEL,
+              MUSIC,
+              FOOD,
+              OTHER,
+            ]
+        location:
+          type: string
+          description: Event location
+        venue:
+          type: string
+          description: Event venue name
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        price:
+          type: number
+          description: Event ticket price
+        availableSeats:
+          type: integer
+          description: Number of available seats
+        totalSeats:
+          type: integer
+          description: Total number of seats
+        image:
+          type: string
+          description: Event image URL
+        organizerId:
+          type: string
+          description: Event organizer ID
+        isActive:
+          type: boolean
+          description: Whether the event is active
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        eventId:
+          type: string
+        quantity:
+          type: integer
+        totalAmount:
+          type: number
+        pointsUsed:
+          type: integer
+        finalAmount:
+          type: number
+        status:
+          type: string
+          enum:
+            [
+              WAITING_PAYMENT,
+              WAITING_CONFIRMATION,
+              DONE,
+              REJECTED,
+              EXPIRED,
+              CANCELLED,
+            ]
+        paymentMethod:
+          type: string
+        paymentProofBase64:
+          type: string
+        paymentDeadline:
+          type: string
+          format: date-time
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        eventId:
+          type: string
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Promotion:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+          description: Promotion code
+        discountPercent:
+          type: number
+          minimum: 1
+          maximum: 100
+        validUntil:
+          type: string
+          format: date-time
+        maxUses:
+          type: integer
+          nullable: true
+        minPurchase:
+          type: number
+          nullable: true
+        usedCount:
+          type: integer
+        isActive:
+          type: boolean
+        eventId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+
+paths:
+  # Authentication endpoints
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register new user
+      description: Create a new user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - fullName
+                - role
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 6
+                fullName:
+                  type: string
+                role:
+                  type: string
+                  enum: [CUSTOMER, ORGANIZER]
+                gender:
+                  type: string
+                  enum: [MALE, FEMALE]
+                birthDate:
+                  type: string
+                  format: date
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: "#/components/schemas/User"
+                          token:
+                            type: string
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user and get access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: "#/components/schemas/User"
+                          token:
+                            type: string
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/profile:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user profile
+      description: Get authenticated user's profile information
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/User"
+
+  # Events endpoints
+  /events:
+    get:
+      tags:
+        - Events
+      summary: Get all events
+      description: Retrieve list of events with optional filtering
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum:
+              [
+                TECHNOLOGY,
+                BUSINESS,
+                EDUCATION,
+                ENTERTAINMENT,
+                SPORTS,
+                ART,
+                HEALTH,
+                TRAVEL,
+                MUSIC,
+                FOOD,
+                OTHER,
+              ]
+        - name: location
+          in: query
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Events retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          events:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/Event"
+                          pagination:
+                            type: object
+                            properties:
+                              page:
+                                type: integer
+                              limit:
+                                type: integer
+                              total:
+                                type: integer
+                              totalPages:
+                                type: integer
+
+    post:
+      tags:
+        - Events
+      summary: Create new event
+      description: Create a new event (organizer only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - description
+                - category
+                - location
+                - startDate
+                - endDate
+                - price
+                - totalSeats
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                category:
+                  type: string
+                  enum:
+                    [
+                      TECHNOLOGY,
+                      BUSINESS,
+                      EDUCATION,
+                      ENTERTAINMENT,
+                      SPORTS,
+                      ART,
+                      HEALTH,
+                      TRAVEL,
+                      MUSIC,
+                      FOOD,
+                      OTHER,
+                    ]
+                location:
+                  type: string
+                venue:
+                  type: string
+                startDate:
+                  type: string
+                  format: date-time
+                endDate:
+                  type: string
+                  format: date-time
+                price:
+                  type: number
+                totalSeats:
+                  type: integer
+                image:
+                  type: string
+      responses:
+        "201":
+          description: Event created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Event"
+
+  /events/{id}:
+    get:
+      tags:
+        - Events
+      summary: Get event by ID
+      description: Retrieve a specific event by its ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Event retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Event"
+        "404":
+          description: Event not found
+
+    put:
+      tags:
+        - Events
+      summary: Update event
+      description: Update an existing event (organizer only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                category:
+                  type: string
+                  enum:
+                    [
+                      TECHNOLOGY,
+                      BUSINESS,
+                      EDUCATION,
+                      ENTERTAINMENT,
+                      SPORTS,
+                      ART,
+                      HEALTH,
+                      TRAVEL,
+                      MUSIC,
+                      FOOD,
+                      OTHER,
+                    ]
+                location:
+                  type: string
+                venue:
+                  type: string
+                startDate:
+                  type: string
+                  format: date-time
+                endDate:
+                  type: string
+                  format: date-time
+                price:
+                  type: number
+                totalSeats:
+                  type: integer
+                image:
+                  type: string
+                isActive:
+                  type: boolean
+      responses:
+        "200":
+          description: Event updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Event"
+
+    delete:
+      tags:
+        - Events
+      summary: Delete event
+      description: Delete an existing event (organizer only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Event deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+
+  # Transactions endpoints
+  /transactions:
+    get:
+      tags:
+        - Transactions
+      summary: Get user transactions
+      description: Get current user's transactions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              [
+                WAITING_PAYMENT,
+                WAITING_CONFIRMATION,
+                DONE,
+                REJECTED,
+                EXPIRED,
+                CANCELLED,
+              ]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Transaction"
+
+    post:
+      tags:
+        - Transactions
+      summary: Create transaction
+      description: Create a new booking transaction
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - eventId
+                - quantity
+              properties:
+                eventId:
+                  type: string
+                quantity:
+                  type: integer
+                  minimum: 1
+                pointsUsed:
+                  type: integer
+                  minimum: 0
+                promotionCode:
+                  type: string
+      responses:
+        "201":
+          description: Transaction created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Transaction"
+
+  /transactions/{id}:
+    get:
+      tags:
+        - Transactions
+      summary: Get transaction by ID
+      description: Get specific transaction details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Transaction retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Transaction"
+
+  /transactions/{id}/upload-payment:
+    post:
+      tags:
+        - Transactions
+      summary: Upload payment proof
+      description: Upload payment proof for a transaction
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - paymentProofBase64
+              properties:
+                paymentProofBase64:
+                  type: string
+                  description: Base64 encoded payment proof image
+      responses:
+        "200":
+          description: Payment proof uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+
+  # Reviews endpoints
+  /reviews:
+    post:
+      tags:
+        - Reviews
+      summary: Create review
+      description: Create a new event review
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - eventId
+                - rating
+              properties:
+                eventId:
+                  type: string
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                comment:
+                  type: string
+      responses:
+        "201":
+          description: Review created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Review"
+
+  /reviews/event/{eventId}:
+    get:
+      tags:
+        - Reviews
+      summary: Get event reviews
+      description: Get all reviews for a specific event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Reviews retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          reviews:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/Review"
+                          averageRating:
+                            type: number
+                          totalReviews:
+                            type: integer
+
+  # Promotions endpoints
+  /promotions:
+    get:
+      tags:
+        - Promotions
+      summary: Get promotions
+      description: Get promotions for an event
+      parameters:
+        - name: eventId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Promotions retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Promotion"
+
+    post:
+      tags:
+        - Promotions
+      summary: Create promotion
+      description: Create a new promotion code
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+                - discountPercent
+                - validUntil
+              properties:
+                code:
+                  type: string
+                  description: Unique promotion code
+                discountPercent:
+                  type: number
+                  minimum: 1
+                  maximum: 100
+                validUntil:
+                  type: string
+                  format: date-time
+                maxUses:
+                  type: integer
+                  nullable: true
+                minPurchase:
+                  type: number
+                  nullable: true
+                eventId:
+                  type: string
+                  nullable: true
+      responses:
+        "201":
+          description: Promotion created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Promotion"
+
+  /promotions/{id}:
+    put:
+      tags:
+        - Promotions
+      summary: Update promotion
+      description: Update an existing promotion
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                discountPercent:
+                  type: number
+                  minimum: 1
+                  maximum: 100
+                validUntil:
+                  type: string
+                  format: date-time
+                maxUses:
+                  type: integer
+                  nullable: true
+                minPurchase:
+                  type: number
+                  nullable: true
+                isActive:
+                  type: boolean
+      responses:
+        "200":
+          description: Promotion updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Promotion"
+
+    delete:
+      tags:
+        - Promotions
+      summary: Delete promotion
+      description: Delete a promotion code
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Promotion deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+
+  /promotions/validate/{code}:
+    get:
+      tags:
+        - Promotions
+      summary: Validate promotion code
+      description: Check if a promotion code is valid
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: eventId
+          in: query
+          schema:
+            type: string
+        - name: totalAmount
+          in: query
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Promotion validation result
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          valid:
+                            type: boolean
+                          promotion:
+                            $ref: "#/components/schemas/Promotion"
+                          discountAmount:
+                            type: number
+
+  # Upload endpoints
+  /upload/image:
+    post:
+      tags:
+        - Upload
+      summary: Upload image
+      description: Upload an image file
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Image file to upload
+      responses:
+        "200":
+          description: Image uploaded successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          url:
+                            type: string
+                            description: URL of uploaded image
+
+  # Users endpoints
+  /users/profile:
+    get:
+      tags:
+        - Users
+      summary: Get user profile
+      description: Get current user's profile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/User"
+
+    put:
+      tags:
+        - Users
+      summary: Update user profile
+      description: Update current user's profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                gender:
+                  type: string
+                  enum: [MALE, FEMALE]
+                birthDate:
+                  type: string
+                  format: date
+                profilePicture:
+                  type: string
+      responses:
+        "200":
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/User"
+
+  /users/organizer/{id}/profile-stats:
+    get:
+      tags:
+        - Users
+      summary: Get organizer profile with stats
+      description: Get organizer profile including events and reviews statistics
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Organizer profile with stats retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: "#/components/schemas/User"
+                          stats:
+                            type: object
+                            properties:
+                              totalEvents:
+                                type: integer
+                              totalReviews:
+                                type: integer
+                              averageRating:
+                                type: number
+                              ratingDistribution:
+                                type: object
+                                properties:
+                                  star5:
+                                    type: integer
+                                  star4:
+                                    type: integer
+                                  star3:
+                                    type: integer
+                                  star2:
+                                    type: integer
+                                  star1:
+                                    type: integer
+                          events:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/Event"
+                          reviews:
+                            type: array
+                            items:
+                              allOf:
+                                - $ref: "#/components/schemas/Review"
+                                - type: object
+                                  properties:
+                                    event:
+                                      type: object
+                                      properties:
+                                        id:
+                                          type: string
+                                        title:
+                                          type: string

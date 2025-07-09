@@ -1,0 +1,21 @@
+{
+  "$schema": "https://cdn.scalar.com/schema/scalar-config.json",
+  "subdomain": "event-management-api",
+  "guides": [
+    {
+      "name": "Event Management API Documentation",
+      "sidebar": [
+        {
+          "path": "docs/introduction.md",
+          "type": "page"
+        }
+      ]
+    }
+  ],
+  "references": [
+    {
+      "name": "Event Management API v1.0.0",
+      "liveLink": "docs/api-spec.yaml"
+    }
+  ]
+}

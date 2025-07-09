@@ -1,0 +1,174 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String     @id @default(cuid())
+  fullName        String    // Sesuai diagram
+  email           String     @unique
+  password        String     // Add password field
+  role            UserRole   @default(CUSTOMER)
+  profilePicture  String?    // Sesuai diagram
+  gender          UserGender?
+  birthDate       DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  points          Int        @default(0)
+
+  // Relations
+  eventsCreated Event[]       @relation("EventOrganizer")
+  transactions  Transaction[]
+  reviews       Review[]
+
+  @@map("users")
+}
+
+model Event {
+  id          String      @id @default(cuid())
+  title       String
+  description String
+  category    EventCategory // Change to enum
+  location    String
+  startDate   DateTime
+  endDate     DateTime
+  price       Float       @default(0)
+  totalSeats  Int
+  availableSeats Int      @default(0) // Track available seats
+  isFree      Boolean     @default(false)
+  image       String?
+  status      EventStatus @default(UPCOMING)
+  tags        String[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Foreign Keys
+  organizerId String
+  promotionId String? @unique
+
+  // Relations
+  organizer     User           @relation("EventOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
+  promotion     Promotion?     @relation(fields: [promotionId], references: [id])
+  transactions  Transaction[]
+  reviews       Review[]
+
+  @@map("events")
+}
+
+model Promotion {
+  id               String    @id @default(cuid())
+  code             String    @unique
+  discountPercent  Int
+  validUntil       DateTime
+  maxUses          Int?
+  currentUses      Int       @default(0)
+  minPurchase      Float?
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relations
+  event        Event?
+  transactions Transaction[]
+
+  @@map("promotions")
+}
+
+model Transaction {
+  id              String            @id @default(cuid())
+  totalAmount     Float             // Original amount in IDR
+  pointsUsed      Int               @default(0) // Points used in IDR value
+  discountAmount  Float             @default(0) // Promotion discount in IDR
+  finalAmount     Float             // Final amount after points and discounts
+  paymentMethod   String?
+  paymentProof    String?           // Cloudinary URL of payment proof
+  paymentProofBase64 String?        // Base64 backup of payment proof
+  status          TransactionStatus @default(WAITING_PAYMENT)
+  paymentDeadline DateTime?         // 2 hours from creation
+  confirmationDeadline DateTime?    // 3 days from payment proof upload
+  notes           String?
+  quantity        Int               @default(1) // Number of tickets
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // Foreign Keys
+  userId      String
+  eventId     String
+  promotionId String?
+
+  // Relations
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  promotion Promotion? @relation(fields: [promotionId], references: [id])
+
+  @@unique([userId, eventId])
+  @@map("transactions")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int      // 1-5 stars
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Foreign Keys
+  userId  String
+  eventId String
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@map("reviews")
+}
+
+// Enums
+enum UserRole {
+  CUSTOMER
+  ORGANIZER
+  ADMIN
+}
+
+enum UserGender {
+  MALE
+  FEMALE
+}
+
+enum EventStatus {
+  UPCOMING
+  ACTIVE
+  ENDED
+  CANCELLED
+}
+
+enum EventCategory {
+  TECHNOLOGY
+  BUSINESS
+  EDUCATION
+  ENTERTAINMENT
+  SPORTS
+  HEALTH
+  FOOD
+  TRAVEL
+  ART
+  MUSIC
+  OTHER
+}
+
+enum TransactionStatus {
+  WAITING_PAYMENT
+  WAITING_CONFIRMATION
+  DONE
+  REJECTED
+  EXPIRED
+  CANCELLED
+}
