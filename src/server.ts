@@ -16,12 +16,33 @@ const app = express();
 
 // Security middleware
 app.use(helmet());
+
+// CORS configuration for multiple origins
+const allowedOrigins = [
+  config.clientUrl, // From config file
+  config.clientUrl, // Fallback from single client URL
+].filter(Boolean); // Remove any undefined values
+
 app.use(
   cors({
-    origin: config.clientUrl,
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or Postman)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        console.log(`🚫 CORS blocked origin: ${origin}`);
+        console.log("✅ Allowed origins:", allowedOrigins);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 
 // Rate limiting
 const limiter = rateLimit({
@@ -108,6 +129,12 @@ app.listen(config.port, () => {
   console.log(`📊 Environment: ${config.nodeEnv}`);
   console.log(`⏰ Started at: ${new Date().toLocaleString()}`);
 
+
+   // Log CORS configuration
+
+   console.log("🔐 CORS Configuration:");
+
+   console.log(`   ✅ Allowed Origins:`, allowedOrigins);
   // Initialize cron jobs
   initializeCronJobs();
 
