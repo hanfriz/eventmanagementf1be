@@ -18,6 +18,12 @@ export const config = {
 
   // Client Configuration
   clientUrl: process.env.CLIENT_URL || "http://localhost:3000",
+  clientUrls: process.env.CLIENT_URLS 
+    ? process.env.CLIENT_URLS.split(',').map(url => url.trim())
+    : [
+        "http://localhost:3000",
+        "https://eventmanagementf1fe.vercel.app"
+      ],
 
   // File Upload Configuration
   cloudinary: {
